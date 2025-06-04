@@ -33,10 +33,78 @@
       color: #444;
     }
 
+    /* Subtle input container */
+    #stockInputContainer {
+      max-width: 600px;
+      margin: 0 auto 10px auto;
+      text-align: right;
+      opacity: 0.5;
+      font-size: 14px;
+      font-weight: normal;
+      transition: opacity 0.3s;
+      user-select: none;
+    }
+    #stockInputContainer:hover {
+      opacity: 1;
+      user-select: auto;
+    }
+
+    #stockInput {
+      width: 200px;
+      padding: 4px 6px;
+      font-size: 14px;
+      border-radius: 3px;
+      border: 1px solid #0f0;
+      background-color: #111;
+      color: #0f0;
+      outline: none;
+      vertical-align: middle;
+      transition: background-color 0.3s, color 0.3s;
+    }
+
+    .light #stockInputContainer {
+      opacity: 0.5;
+    }
+    .light #stockInputContainer:hover {
+      opacity: 1;
+    }
+
+    .light #stockInput {
+      border-color: #444;
+      background-color: #fff;
+      color: #000;
+    }
+
+    #updateStocksBtn {
+      padding: 4px 10px;
+      font-size: 14px;
+      margin-left: 6px;
+      cursor: pointer;
+      border-radius: 3px;
+      border: none;
+      background-color: #0f0;
+      color: #000;
+      vertical-align: middle;
+      transition: background-color 0.3s;
+    }
+
+    #updateStocksBtn:hover {
+      background-color: #0c0;
+    }
+
+    .light #updateStocksBtn {
+      background-color: #4caf50;
+      color: #fff;
+    }
+
+    .light #updateStocksBtn:hover {
+      background-color: #388e3c;
+    }
+
     table {
       width: 100%;
       max-width: 600px;
-      margin: 60px auto 0;
+      margin: 0 auto;
       border-collapse: collapse;
       border-radius: 10px;
       overflow: hidden;
@@ -82,23 +150,26 @@
       color: red;
     }
 
-    .updated {
-      text-align: center;
-      font-size: 14px;
-      color: #aaa;
-      margin-top: 10px;
-    }
-
-    .light .updated {
-      color: #555;
+    .light tr:hover {
+      background-color: #ddd;
     }
 
     tr:hover {
       background-color: #222;
     }
 
-    .light tr:hover {
-      background-color: #ddd;
+    .updated {
+      text-align: center;
+      font-size: 14px;
+      color: #aaa;
+      margin-top: 10px;
+      max-width: 600px;
+      margin-left: auto;
+      margin-right: auto;
+    }
+
+    .light .updated {
+      color: #555;
     }
 
     @media screen and (max-width: 480px) {
@@ -106,11 +177,20 @@
         font-size: 14px;
         padding: 6px;
       }
+
+      #stockInput {
+        width: 140px;
+      }
     }
   </style>
 </head>
 <body>
   <button id="themeToggle" title="Toggle Light/Dark Mode">💡</button>
+
+  <div id="stockInputContainer" title="Enter stock symbols separated by commas and press Update">
+    <input type="text" id="stockInput" placeholder="Stocks e.g. AAPL, TSLA" />
+    <button id="updateStocksBtn">Update</button>
+  </div>
 
   <table>
     <thead>
@@ -133,6 +213,11 @@
     var apiKey = "M5DmvwdCbN3zaFV9G854Jao7O3wTwswh";
     var stocks = ["NVDA", "AAPL", "MSFT", "GOOGL"];
     var bulb = document.getElementById("themeToggle");
+    var input = document.getElementById("stockInput");
+    var updateBtn = document.getElementById("updateStocksBtn");
+
+    // Initialize input box with default stocks
+    input.value = stocks.join(", ");
 
     function formatVolume(num) {
       if (num >= 1e9) return (num / 1e9).toFixed(2) + "B";
@@ -150,33 +235,45 @@
     }
 
     function fetchData() {
+      if (stocks.length === 0) {
+        document.getElementById("ticker-body").innerHTML = '<tr><td colspan="5">No stocks to display.</td></tr>';
+        return;
+      }
       var xhr = new XMLHttpRequest();
       var url = "https://financialmodelingprep.com/api/v3/quote/" + stocks.join(",") + "?apikey=" + apiKey;
 
       xhr.onreadystatechange = function () {
-        if (xhr.readyState === 4 && xhr.status === 200) {
-          var data = JSON.parse(xhr.responseText);
-          var html = "";
-          for (var i = 0; i < data.length; i++) {
-            var stock = data[i];
-            var price = parseFloat(stock.price).toFixed(2);
-            var change = parseFloat(stock.change).toFixed(2);
-            var percent = parseFloat(stock.changesPercentage).toFixed(2);
-            var volume = formatVolume(stock.volume);
-            var direction = change >= 0 ? "▲" : "▼";
-            var cls = change >= 0 ? "up" : "down";
+        if (xhr.readyState === 4) {
+          if(xhr.status === 200) {
+            var data = JSON.parse(xhr.responseText);
+            var html = "";
+            if (data.length === 0) {
+              html = '<tr><td colspan="5">No data found for the given symbols.</td></tr>';
+            } else {
+              for (var i = 0; i < data.length; i++) {
+                var stock = data[i];
+                var price = parseFloat(stock.price).toFixed(2);
+                var change = parseFloat(stock.change).toFixed(2);
+                var percent = parseFloat(stock.changesPercentage).toFixed(2);
+                var volume = formatVolume(stock.volume);
+                var direction = change >= 0 ? "▲" : "▼";
+                var cls = change >= 0 ? "up" : "down";
 
-            html +=
-              '<tr class="' + cls + '">' +
-              "<td>" + stock.symbol + "</td>" +
-              "<td>$" + price + "</td>" +
-              "<td>" + direction + " " + Math.abs(change) + "</td>" +
-              "<td>" + Math.abs(percent) + "%</td>" +
-              "<td>" + volume + "</td>" +
-              "</tr>";
+                html +=
+                  '<tr class="' + cls + '">' +
+                  "<td>" + stock.symbol + "</td>" +
+                  "<td>$" + price + "</td>" +
+                  "<td>" + direction + " " + Math.abs(change) + "</td>" +
+                  "<td>" + Math.abs(percent) + "%</td>" +
+                  "<td>" + volume + "</td>" +
+                  "</tr>";
+              }
+            }
+            document.getElementById("ticker-body").innerHTML = html;
+            updateTimestamp();
+          } else {
+            document.getElementById("ticker-body").innerHTML = '<tr><td colspan="5">Error loading data.</td></tr>';
           }
-          document.getElementById("ticker-body").innerHTML = html;
-          updateTimestamp();
         }
       };
 
@@ -184,9 +281,21 @@
       xhr.send();
     }
 
+    // Toggle light/dark mode with lightbulb icon
     bulb.onclick = function () {
       document.body.classList.toggle("light");
       bulb.textContent = document.body.classList.contains("light") ? "💡" : "💡";
+    };
+
+    // Update stocks list when button clicked
+    updateBtn.onclick = function () {
+      var val = input.value.trim();
+      if (val.length === 0) {
+        stocks = [];
+      } else {
+        stocks = val.split(",").map(function(s) { return s.trim().toUpperCase(); }).filter(function(s){ return s.length > 0; });
+      }
+      fetchData();
     };
 
     fetchData();
