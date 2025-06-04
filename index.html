@@ -1,0 +1,26 @@
+<script>
+  const API_KEY = "YOUR_ALPHA_VANTAGE_API_KEY";
+  const SYMBOLS = ["AAPL", "TSLA", "GOOGL", "MSFT", "AMZN"]; // <== Customize here!
+  let currentIndex = 0;
+
+  async function getStockPrice(symbol) {
+    try {
+      const response = await fetch(`https://www.alphavantage.co/query?function=GLOBAL_QUOTE&symbol=${symbol}&apikey=${API_KEY}`);
+      const data = await response.json();
+      const price = data["Global Quote"]["05. price"];
+      document.getElementById("ticker").textContent = `${symbol}: $${parseFloat(price).toFixed(2)}`;
+    } catch (error) {
+      document.getElementById("ticker").textContent = `${symbol}: Error`;
+      console.error("API error:", error);
+    }
+  }
+
+  function cycleStocks() {
+    const symbol = SYMBOLS[currentIndex];
+    getStockPrice(symbol);
+    currentIndex = (currentIndex + 1) % SYMBOLS.length;
+  }
+
+  cycleStocks();                      // Run on load
+  setInterval(cycleStocks, 10000);   // Update every 10 seconds
+</script>
